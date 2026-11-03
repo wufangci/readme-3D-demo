@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>README 毛刺 2F 配置 v21</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500&family=Noto+Serif+TC:wght@400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-bleed 3D room, one compact control sheet floating bottom-left. Single dark look by choice. */
+:root{
+  --bg:#0b0b0a; --panel:rgba(16,16,15,.88); --fg:#ecebe7; --muted:#9a988f;
+  --line:rgba(236,235,231,.14); --accent:#2490f2; --on:#06182b; /* accent: sea blue of the video (hue 209), saturated */
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:var(--sans)}
+#stage{position:relative;height:100%;width:100%;overflow:hidden}
+a-scene{width:100%;height:100%}
+.sheet{position:fixed;z-index:5;left:max(16px,env(safe-area-inset-left,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));
+  width:min(340px,calc(100% - 32px));background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:14px 16px;display:flex;flex-direction:column;gap:12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+h1{margin:0;font-size:16px;font-weight:500;letter-spacing:.02em}
+h1 span{font-family:var(--mono);color:var(--muted);font-size:12px;font-weight:400;margin-left:6px}
+.toggle{background:none;border:0;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:2px 0}
+.label{font-size:11px;color:var(--muted);letter-spacing:.08em;margin-bottom:6px}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+button.chip{font:inherit;font-size:13px;color:var(--fg);background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer}
+button.chip:hover{border-color:var(--muted)}
+button.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+ul.legend{list-style:none;margin:0;padding:0;display:grid;gap:5px;font-size:12.5px;line-height:1.5;color:var(--fg)}
+ul.legend li{display:grid;grid-template-columns:12px 1fr;gap:8px;align-items:start}
+.sw{width:10px;height:10px;border-radius:2px;margin-top:5px}
+.dims{font-family:var(--mono);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hint{font-size:12px;color:var(--muted);line-height:1.6;margin:0}
+.body{display:flex;flex-direction:column;gap:12px}
+.slider{display:grid;grid-template-columns:auto 1fr 32px;gap:10px;align-items:center;font-size:12px;color:var(--muted);margin-top:8px}
+.slider input{width:100%;accent-color:var(--accent)}
+.slider output{font-family:var(--mono);color:var(--fg);text-align:right;font-variant-numeric:tabular-nums}
+.collapsed .body{display:none}
+</style>
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe-master.min.js"></script>
+<script>
+window.drawers = {};
+AFRAME.registerComponent('live-canvas',{
+  schema:{fps:{default:12}},
+  init(){this.last=-1e9},
+  tick(t){
+    if(t-this.last<1000/this.data.fps) return; this.last=t;
+    const fn=window.drawers[this.el.id]; if(fn) fn(t);
+    const m=this.el.getObject3D('mesh'); if(m&&m.material&&m.material.map) m.material.map.needsUpdate=true;
+  }
+});
+</script>
+
+<div id="stage">
+<a-scene embedded renderer="colorManagement:true; antialias:true" background="color:#050505" vr-mode-ui="enabled:true" loading-screen="dotsColor:#2490f2; backgroundColor:#0b0b0a">
+  <a-assets>
+    <video id="tokvid" src="README_ch1_roughcut_4m12s_preview720.mp4" loop muted playsinline autoplay preload="auto"></video>
+  </a-assets>
+  <a-entity id="root"></a-entity>
+  <a-entity light="type:ambient; intensity:0.14; color:#ffffff"></a-entity>
+  <a-entity id="cam" camera="fov:72" look-controls="pointerLockEnabled:false; magicWindowTrackingEnabled:false" wasd-controls="acceleration:18" position="0.9 1.6 0.8"></a-entity>
+</a-scene>
+
+<aside class="sheet" id="sheet" aria-label="配置控制">
+  <div class="head">
+    <h1>README<span>毛刺 2F · v21</span></h1>
+    <button class="toggle" id="fold" aria-expanded="true">收合</button>
+  </div>
+  <div class="body">
+    <div class="dims">寬 400 × 深 770 × 高 250 cm</div>
+    <div>
+      <div class="label">站位</div>
+      <div class="row" id="views">
+        <button class="chip" data-v="door" aria-pressed="true">入口</button>
+        <button class="chip" data-v="read" aria-pressed="false">坐著讀</button>
+        <button class="chip" data-v="look" aria-pressed="false">坐著抬頭</button>
+        <button class="chip" data-v="tableSide" aria-pressed="false">斜看桌子</button>
+        <button class="chip" data-v="behind" aria-pressed="false">椅子後方站著</button>
+        <button class="chip" data-v="screen" aria-pressed="false">投影牆前</button>
+        <button class="chip" data-v="side" aria-pressed="false">斜看牆面</button>
+        <button class="chip" data-v="back" aria-pressed="false">回望入口</button>
+        <button class="chip" data-v="shelfSide" aria-pressed="false">斜看層板</button>
+        <button class="chip" data-v="shelfSit" aria-pressed="false">層板旁坐著</button>
+        <button class="chip" data-v="shelfSitOut" aria-pressed="false">層板旁坐著看布幕</button>
+        <button class="chip" data-v="plinthSide" aria-pressed="false">斜看方柱</button>
+        <button class="chip" data-v="plinthNear" aria-pressed="false">方柱前低頭</button>
+        <button class="chip" data-v="top" aria-pressed="false">俯視</button>
+      </div>
+    </div>
+    <div>
+      <div class="label">投影牆</div>
+      <div class="row" id="wallMode">
+        <button class="chip" data-m="cloth" aria-pressed="true">布幕三折</button>
+      </div>
+      <label class="slider" for="foldAng"><span>摺痕角度</span><input type="range" id="foldAng" min="0" max="12" step="1" value="4"><output id="foldOut">4°</output></label>
+      <div class="row" style="margin-top:8px"><button class="chip" id="swayBtn" aria-pressed="false">布幕微晃</button></div>
+    </div>
+    <div>
+      <div class="label">信的裝置（三選一，v21）</div>
+      <div class="row" id="device">
+        <button class="chip" data-d="table" aria-pressed="true">桌上閱讀</button>
+        <button class="chip" data-d="shelf" aria-pressed="false">牆上層板</button>
+        <button class="chip" data-d="plinth" aria-pressed="false">中央方柱</button>
+      </div>
+      <div id="shelfCtl" style="display:none">
+        <label class="slider" for="shelfH"><span>層板高度</span><input type="range" id="shelfH" min="0.8" max="1.4" step="0.05" value="1.0"><output id="shelfHOut">100 cm</output></label>
+      </div>
+      <div id="plinthCtl" style="display:none">
+        <label class="slider" for="plinthN"><span>書的本數</span><input type="range" id="plinthN" min="3" max="16" step="1" value="8"><output id="plinthNOut">8</output></label>
+      </div>
+    </div>
+    <div id="tableCtl">
+      <div class="label">桌上的書（folded-letters）</div>
+      <div class="row" id="whichBook">
+        <button class="chip" data-k="b12" aria-pressed="true">12 小冊</button>
+        <button class="chip" data-k="b13" aria-pressed="false">13 repo 書</button>
+      </div>
+      <div class="row" id="bookMode" style="margin-top:8px">
+        <button class="chip" data-b="closed" aria-pressed="true">闔上（只有封面）</button>
+        <button class="chip" data-b="open" aria-pressed="false">打開</button>
+      </div>
+      <div class="label" style="margin-top:10px">書的位置（試做）</div>
+      <div class="row" id="bookPos">
+        <button class="chip" data-p="near" aria-pressed="true">讀者面前</button>
+        <button class="chip" data-p="far" aria-pressed="false">靠布幕那端</button>
+      </div>
+      <div class="label" style="margin-top:10px">封面材質（試做）</div>
+      <div class="row" id="coverMode">
+        <button class="chip" data-c="paper" aria-pressed="true">一般紙</button>
+        <button class="chip" data-c="gloss" aria-pressed="false">亮膜</button>
+        <button class="chip" data-c="mirror" aria-pressed="false">鏡面</button>
+      </div>
+      <div id="spreadRow" style="display:none;margin-top:8px">
+        <div class="label">打開哪一頁（13）</div>
+        <div class="row" id="spreadMode">
+          <button class="chip" data-s="ls" aria-pressed="true">檔案清單（p2–3）</button>
+          <button class="chip" data-s="cursor" aria-pressed="false">Cursor 規則（p18–19）</button>
+          <button class="chip" data-s="letter" aria-pressed="false">中文信</button>
+          <button class="chip" data-s="rule" aria-pressed="false">RULE.md</button>
+        </div>
+      </div>
+      <label class="slider" for="tz"><span>桌子離布幕</span><input type="range" id="tz" min="-6.2" max="-4.4" step="0.05" value="-5.3"><output id="tzOut">2.15 m</output></label>
+      <div class="row" style="margin-top:8px"><button class="chip" id="beamBtn" aria-pressed="false">顯示投影光範圍</button></div>
+      <div class="label" style="margin-top:10px">玻璃種類（試做）</div>
+      <div class="row" id="glassMode">
+        <button class="chip" data-g="clear" aria-pressed="true">清玻璃</button>
+        <button class="chip" data-g="black" aria-pressed="false">黑色烤漆玻璃</button>
+        <button class="chip" data-g="semi" aria-pressed="false">半反射鍍膜</button>
+      </div>
+      <div class="label" style="margin-top:10px">玻璃反射</div>
+      <div class="row" id="reflMode">
+        <button class="chip" data-r="off" aria-pressed="false">不算</button>
+        <button class="chip" data-r="real" aria-pressed="true">一般玻璃（約 8%）</button>
+        <button class="chip" data-r="boost" aria-pressed="false">放大三倍（示意）</button>
+      </div>
+    </div>
+    <div>
+      <div class="label">牆面</div>
+      <div class="row" id="walls">
+        <button class="chip" data-w="black" aria-pressed="true">全黑（木牆遮黑幕）</button>
+        <button class="chip" data-w="white" aria-pressed="false">白牆＋原木牆</button>
+      </div>
+    </div>
+    <div>
+      <div class="label">牆上的字</div>
+      <div class="row" id="wallText">
+        <button class="chip" data-t="a" aria-pressed="false">A 上下兩行</button>
+        <button class="chip" data-t="b" aria-pressed="true">B 同一行</button>
+        <button class="chip" data-t="c" aria-pressed="false">C 小字低處</button>
+        <button class="chip" data-t="d" aria-pressed="false">D 只有 ID</button>
+      </div>
+    </div>
+    <div class="row">
+      <button class="chip" id="pathBtn" aria-pressed="true">顯示動線</button>
+    </div>
+    <ul class="legend">
+      <li><span class="sw" style="background:#f4f3ef"></span><span>單頻道投影，聲音外放。三章：AI 圖像、偽教學、信的 token 化</span></li>
+      <li><span class="sw" style="background:#d9d8d4"></span><span>布幕 360 × 203 cm（16:9），摺三折後燙出兩條直摺線，三幅布在摺線處接縫；上方吊桿懸掛，下方細桿拉平</span></li>
+      <li><span class="sw" style="background:#f2f0eb"></span><span>信的裝置（D020）：深色桌子，桌面壓玻璃與桌子長寬對齊，一張深色椅子面向布幕；A5 小冊放在玻璃上，可切換闔上／打開（正面中文、背面 ID）。尺寸是建議：桌 90 × 60 × 74 cm、玻璃 8 mm</span></li>
+      <li><span class="sw" style="background:#f2f0eb"></span><span>牆上層板（v21 試做）：右牆釘一片層板，上方一盞燈；13 repo 書三本平疊、一本直立；層板旁一張椅子靠牆。尺寸是建議：層板 60 × 25 cm、離地 100 cm</span></li>
+      <li><span class="sw" style="background:#f2f0eb"></span><span>中央方柱（v21 試做）：房間中軸一座方柱台，上面堆疊 13 repo 書，上方一盞燈。尺寸是建議：40 × 40 × 100 cm</span></li>
+      <li><span class="sw" style="background:#ffffff"></span><span>入口通道右牆的燈打出 #README 與 ljaljuy tjavelengan 的 token（o200k_base）</span></li>
+      <li><span class="sw" style="background:#3a3a38"></span><span>樓梯間（示意，開放與否待確認）</span></li>
+    </ul>
+    <p class="hint">拖曳畫面看四周；電腦可用 WASD 或方向鍵走動。模型裡的投影是錄像開頭＋第一章粗剪（4:12），影片鋪滿布幕。</p>
+  </div>
+</aside>
+</div>
+
+<script>
+(function(){
+const H=2.5;
+const root=document.getElementById('root');
+function add(tag,attrs,parent){const e=document.createElement(tag);for(const k in attrs)e.setAttribute(k,attrs[k]);(parent||root).appendChild(e);return e;}
+function box(x1,x2,y1,y2,z1,z2,color,cls,extra){
+  return add('a-box',Object.assign({
+    position:`${(x1+x2)/2} ${(y1+y2)/2} ${(z1+z2)/2}`,
+    width:Math.abs(x2-x1),height:Math.abs(y2-y1),depth:Math.abs(z2-z1),
+    material:`color:${color}; roughness:0.95; metalness:0`, class:cls||''
+  },extra||{}));
+}
+
+/* floor (with stairwell opening) */
+const FLOOR='#1b1b1a';
+box(-2,2,-0.02,0,-7.7,-3.4,FLOOR);
+box(-1.05,2,-0.02,0,-3.4,-1.4,FLOOR);
+box(-0.10,2,-0.02,0,-1.4,0,FLOOR);
+box(0.47,1.34,-0.02,0,0,1.4,'#262624');
+/* ceiling */
+box(-2,2,H,H+0.03,-7.78,0.08,'#101010','',{id:'ceil'});
+/* walls */
+box(-2.08,-2,0,H,-7.78,0.08,'#0e0e0e','wall');
+box(2,2.08,0,H,-7.78,0.08,'#0e0e0e','wall');
+box(-2,0.47,0,H,0,0.08,'#0e0e0e','wall');
+box(1.34,2,0,H,0,0.08,'#0e0e0e','wall');
+box(0.47,1.34,2.05,H,0,0.08,'#0e0e0e','wall');
+box(-0.10,0.05,0,H,-1.4,0,'#0e0e0e','wall');
+box(-2,2,0,H,-7.78,-7.7,'#0e0e0e','wood');
+box(-1.21,-0.81,0,2.05,-7.70,-7.68,'#161616','doorcover');
+
+/* stairwell (schematic) */
+for(let i=0;i<10;i++){const top=-0.18*(i+1);box(-2,-1.05,top-0.18,top,-3.4+i*0.34,-3.4+(i+1)*0.34,'#2c2c2a');}
+for(let i=0;i<5;i++){const top=-0.18*(i+1);box(-1.05,-0.10,top-0.18,top,-1.4+i*0.28,-1.4+(i+1)*0.28,'#2c2c2a');}
+const RAIL='#4a4a47';
+box(-2,-1.05,0.88,0.92,-3.42,-3.38,RAIL);
+box(-1.07,-1.03,0.88,0.92,-3.4,-1.4,RAIL);
+box(-1.05,-0.10,0.88,0.92,-1.42,-1.38,RAIL);
+[[-1.6,-3.4],[-1.05,-3.4],[-1.05,-2.4],[-1.05,-1.4],[-0.55,-1.4]].forEach(([x,z])=>box(x-0.015,x+0.015,0,0.9,z-0.015,z+0.015,RAIL));
+
+/* projection: A4 letter false wall with creases, or plain 16:9 on the wood wall */
+const THREE=AFRAME.THREE;
+const HQ=new URLSearchParams(location.search).has('hq'); /* ?hq: sharper projection texture, used when recording */
+const vidEl=document.getElementById('tokvid');
+const plain=add('a-plane',{id:'tok',position:'0 1.3 -7.66',width:4,height:2.25,material:'shader:flat; src:#tokvid',visible:'false'});
+box(-0.16,0.16,2.36,2.5,-4.25,-3.95,'#1c1c1c');
+box(-0.02,0.02,2.44,2.5,-4.12,-4.08,'#1c1c1c');
+add('a-entity',{position:'0 1.3 -6.4',light:'type:point; color:#ffffff; intensity:0.5; distance:5.5; decay:2'});
+let SW=3.30,SH=2.33,SY=0.10+SH/2;const SZ=-7.52;
+let phase=0,sway=false;
+const frameEl=box(-SW/2+0.02,SW/2-0.02,0.10,0.10+SH,SZ-0.14,SZ-0.01,'#151515');
+const sheetEl=add('a-entity',{id:'sheetWall',position:`0 ${SY} ${SZ}`});
+add('a-entity',{id:'projT',position:`0 ${SY} ${SZ}`});
+const projL=add('a-entity',{position:'0 2.38 -4.1',light:'type:spot; color:#ffffff; intensity:0.35; angle:38; penumbra:0.15; distance:6; decay:1; target:#projT'});
+const pc=document.createElement('canvas');pc.width=1024;pc.height=724;
+const pctx=pc.getContext('2d');
+function mkTex(){const t=new THREE.CanvasTexture(pc);if(THREE.SRGBColorSpace) t.colorSpace=THREE.SRGBColorSpace;return t;}
+let ptex=mkTex();
+const mat=new THREE.MeshStandardMaterial({map:ptex,color:0x2a2a2a,emissive:0xffffff,emissiveMap:ptex,emissiveIntensity:0.92,roughness:1,metalness:0,side:THREE.DoubleSide});
+let mode='env',ang=4,mesh=null;
+function creaseLines(){
+  if(mode==='tri'||mode==='cloth') return [[[1/3,0],[1/3,1]],[[2/3,0],[2/3,1]]];
+  if(mode==='vtri') return [[[0,1/3],[1,1/3]],[[0,2/3],[1,2/3]]];
+  if(mode==='env') return [[[0.5,0],[1,0.5]],[[1,0.5],[0.5,1]],[[0.5,1],[0,0.5]],[[0,0.5],[0.5,0]]];
+  return [];
+}
+function lift(u,v){
+  const t=Math.tan(ang*Math.PI/180);
+  if(mode==='tri') return t*(SW/3)*(Math.max(0,1-3*u)+Math.max(0,3*u-2));
+  if(mode==='cloth'){const base=t*(SW/3)*(Math.max(0,1-3*u)+Math.max(0,3*u-2));const rip=(0.010*Math.sin(u*SW*2*Math.PI/0.55+phase*1.3)+(sway?0.018*Math.sin(phase+u*2.2):0))*Math.sin(Math.PI*v);return base+rip;}
+  if(mode==='vtri') return t*(SH/3)*(Math.max(0,1-3*v)+Math.max(0,3*v-2));
+  if(mode==='env'){const s=Math.abs(2*u-1)+Math.abs(2*v-1);const dc=1/Math.sqrt(4/(SW*SW)+4/(SH*SH));return t*dc*Math.max(0,s-1);}
+  return 0;
+}
+function setZ(g){const p=g.attributes.position;for(let i=0;i<p.count;i++){const u=p.getX(i)/SW+0.5,v=p.getY(i)/SH+0.5;p.setZ(i,lift(u,v));}p.needsUpdate=true;g.computeVertexNormals();}
+function buildSheet(){
+  const g=new THREE.PlaneGeometry(SW,SH,120,86);
+  setZ(g);
+  if(mesh){mesh.geometry.dispose();mesh.geometry=g;}else{mesh=new THREE.Mesh(g,mat);sheetEl.setObject3D('mesh',mesh);}
+}
+function drawSheet(){
+  const W=pc.width,Hh=pc.height;
+  pctx.fillStyle='#ffffff';pctx.fillRect(0,0,W,Hh);
+  if(vidEl&&vidEl.readyState>=2){if(mode==='cloth'){pctx.drawImage(vidEl,0,0,W,Hh);}else if(mode==='vtri'){const w=Hh*16/9;pctx.drawImage(vidEl,(W-w)/2,0,w,Hh);}else{const h=W*9/16;pctx.drawImage(vidEl,0,(Hh-h)/2,W,h);}}
+  pctx.strokeStyle='rgba(0,0,0,0.14)';pctx.lineWidth=1.5;
+  creaseLines().forEach(([[u1,v1],[u2,v2]])=>{pctx.beginPath();pctx.moveTo(u1*W,(1-v1)*Hh);pctx.lineTo(u2*W,(1-v2)*Hh);pctx.stroke();});
+  ptex.needsUpdate=true;
+}
+setInterval(()=>{if(mode!=='flat'&&mesh){if(sway&&mode==='cloth'){phase+=0.05;setZ(mesh.geometry);}drawSheet();}},66);
+const rig=add('a-entity',{id:'clothRig',visible:'false'});
+const ROD='color:#8d8f92; roughness:0.4; metalness:0.5';
+add('a-cylinder',{position:'0 2.395 -7.45',rotation:'0 0 90',radius:0.012,height:3.72,material:ROD},rig);
+add('a-cylinder',{position:'0 0.352 -7.45',rotation:'0 0 90',radius:0.007,height:3.64,material:ROD},rig);
+[-1.6,1.6].forEach(x=>add('a-cylinder',{position:`${x} 2.45 -7.45`,radius:0.002,height:0.1,material:ROD},rig));
+function setMode(m){
+  mode=m;const flat=m==='flat';
+  plain.setAttribute('visible',flat);sheetEl.setAttribute('visible',!flat);frameEl.setAttribute('visible',!flat&&m!=='cloth');rig.setAttribute('visible',m==='cloth');document.getElementById('swayBtn').disabled=m!=='cloth';
+  projL.setAttribute('light','intensity',flat?0:0.35);
+  if(!flat){
+    const cl=m==='cloth';
+    const nW=m==='vtri'?724:cl&&HQ?1920:1024,nH=m==='vtri'?1024:cl?(HQ?1080:576):724;
+    SW=m==='vtri'?1.65:cl?3.60:3.30;SH=cl?2.025:2.33;SY=cl?2.38-SH/2:0.10+SH/2;
+    frameEl.setAttribute('width',SW-0.04);
+    sheetEl.object3D.position.set(0,SY,cl?-7.45:SZ);
+    document.getElementById('projT').object3D.position.set(0,SY,SZ);
+    if(pc.width!==nW||pc.height!==nH){pc.width=nW;pc.height=nH;ptex.dispose();ptex=mkTex();mat.map=ptex;mat.emissiveMap=ptex;mat.needsUpdate=true;}
+    buildSheet();drawSheet();
+  }
+  document.getElementById('foldAng').disabled=flat;
+  document.querySelectorAll('#wallMode .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===m));
+}
+
+/* reading table (D020): a white table with a sheet of glass cut flush to its top, one chair facing the cloth,
+   and the booklet lying open on the glass. Sizes are suggestions, not decided: table 90 x 60 cm, top at 74 cm,
+   glass 8 mm. The table sits below the projector beam so a seated reader casts no shadow on the cloth. */
+const TW=0.90, TD=0.60, TH=0.74, TT=0.03, GT=0.008;
+let TZ=-5.3;                                            /* table centre; slider moves it */
+const tl=new THREE.TextureLoader();
+const tex=src=>{const t=tl.load(src);if(THREE.SRGBColorSpace) t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t;};
+/* table and chair are dark (author, 2026-10-30); the exact colour and finish are not decided */
+const whiteM=new THREE.MeshStandardMaterial({color:0x1d1c1b,roughness:0.6,metalness:0});
+const legM=new THREE.MeshStandardMaterial({color:0x1a1a19,roughness:0.55,metalness:0});
+const glassM=new THREE.MeshStandardMaterial({color:0xdfeee9,roughness:0.05,metalness:0,transparent:true,opacity:0.14,depthWrite:false,side:THREE.DoubleSide});
+const edgeM=new THREE.LineBasicMaterial({color:0x9fb2ab});
+const set=new THREE.Group();
+/* table + glass. Depth stays 60 cm (author, 2026-10-30); the 90 / 120 cm trials were dropped. */
+const tableG=new THREE.Group();set.add(tableG);
+let reflMesh=null, TDcur=TD;
+function buildTable(d){
+  TDcur=d;tableG.clear();
+  const top=new THREE.Mesh(new THREE.BoxGeometry(TW,TT,d),whiteM);top.position.y=TH-TT/2;tableG.add(top);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{const l=new THREE.Mesh(new THREE.BoxGeometry(0.035,TH-TT,0.035),legM);
+    l.position.set(sx*(TW/2-0.04),(TH-TT)/2,sz*(d/2-0.04));tableG.add(l);});
+  /* glass, same length and width as the table */
+  const gb=new THREE.BoxGeometry(TW,GT,d);const glass=new THREE.Mesh(gb,glassM);glass.position.y=TH+GT/2;glass.renderOrder=2;tableG.add(glass);
+  const ge=new THREE.LineSegments(new THREE.EdgesGeometry(gb),edgeM);ge.position.y=TH+GT/2;tableG.add(ge);
+  if(reflMesh){reflMesh.geometry.dispose();reflMesh.geometry=new THREE.PlaneGeometry(TW,d);tableG.add(reflMesh);}
+  tableG.position.z=TD/2-d/2;
+}
+buildTable(TD);
+/* booklet, A5, lying ON the glass (not under it): about 4 mm thick (40 pages), closed shows the cover,
+   open shows the second spread with the pages arching up toward the spine. A soft contact shadow sits under it. */
+const BY=TH+GT;                                          /* glass top surface */
+const BZ=0.11, PW5=0.148, PH5=0.21;
+/* two books to compare (folded-letters 12 booklet / 13 repo book). Thickness is a suggestion:
+   12 = 40 pages ~4 mm; 13 = 97 pages (~49 leaves of ~0.1 mm paper + cover) ~6 mm. */
+const BOOKS={
+  b12:{cover:'booklet/cover.jpg',bt:0.004,spreads:{s2:'booklet/spread.jpg'},def:'s2'},
+  b13:{cover:'booklet13/cover.jpg',bt:0.006,spreads:{ls:'booklet13/01_ls-files.jpg',cursor:'booklet13/02_cursor.jpg',letter:'booklet13/03_letter.jpg',rule:'booklet13/04_rule.jpg'},def:'ls'}};
+const texCache={};const ctex=src=>texCache[src]||(texCache[src]=tex(src));
+let bookK='b12',spreadK='s2',BT=BOOKS.b12.bt;
+const paperM=new THREE.MeshStandardMaterial({color:0xf4f3ef,roughness:0.9});
+function shadowTex(){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
+  const g=x.createRadialGradient(64,64,10,64,64,64);g.addColorStop(0,'rgba(0,0,0,0.55)');g.addColorStop(1,'rgba(0,0,0,0)');
+  x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);}
+const shTex=shadowTex();
+function shadow(w,d){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshBasicMaterial({map:shTex,transparent:true,depthWrite:false}));
+  m.rotation.x=-Math.PI/2;m.position.y=BY+0.0008;m.renderOrder=4;return m;}
+/* closed: unit-height block scaled to the book's thickness */
+const closedB=new THREE.Group();
+const cBlock=new THREE.Mesh(new THREE.BoxGeometry(PW5,1,PH5),paperM);closedB.add(cBlock);
+const coverM=new THREE.MeshStandardMaterial({map:ctex(BOOKS.b12.cover),roughness:0.9});
+const cCover=new THREE.Mesh(new THREE.PlaneGeometry(PW5,PH5),coverM);
+cCover.rotation.x=-Math.PI/2;closedB.add(cCover);
+closedB.add(shadow(PW5+0.05,PH5+0.05));
+closedB.position.z=BZ;set.add(closedB);
+/* open: two halves, each a page block half the thickness; the top page bends up near the spine */
+const openB=new THREE.Group();
+const spreadM=new THREE.MeshStandardMaterial({map:ctex(BOOKS.b12.spreads.s2),roughness:0.9,side:THREE.DoubleSide});
+const oBlocks=[],oPages=[];
+[-1,1].forEach(side=>{
+  const blk=new THREE.Mesh(new THREE.BoxGeometry(PW5,1,PH5),paperM);blk.position.x=side*PW5/2;openB.add(blk);oBlocks.push(blk);
+  const g=new THREE.PlaneGeometry(PW5,PH5,24,1);
+  const pos=g.attributes.position,uv=g.attributes.uv;
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i);                                  /* -PW5/2 .. PW5/2 */
+    const fromSpine=side<0?(PW5/2-x):(x+PW5/2);           /* 0 at spine */
+    const t=fromSpine/PW5;                                /* 0 spine .. 1 outer edge */
+    pos.setZ(i,0.009*Math.pow(1-t,3)*Math.sin(Math.PI*Math.min(1,t*6)));  /* curl up from the spine */
+    uv.setX(i,side<0?uv.getX(i)*0.5:0.5+uv.getX(i)*0.5);
+  }
+  g.computeVertexNormals();
+  const pg=new THREE.Mesh(g,spreadM);
+  pg.rotation.x=-Math.PI/2;pg.position.x=side*PW5/2;openB.add(pg);oPages.push(pg);
+});
+openB.add(shadow(2*PW5+0.06,PH5+0.05));
+openB.position.z=BZ;openB.visible=false;set.add(openB);
+function fitBook(){
+  cBlock.scale.y=BT;cBlock.position.y=BY+BT/2;cCover.position.y=BY+BT+0.0003;
+  oBlocks.forEach(b=>{b.scale.y=BT/2;b.position.y=BY+BT/4;});oPages.forEach(p=>{p.position.y=BY+BT/2+0.0003;});
+}
+function setSpread(k){const B=BOOKS[bookK];if(!B.spreads[k])k=B.def;spreadK=k;spreadM.map=ctex(B.spreads[k]);spreadM.needsUpdate=true;
+  document.querySelectorAll('#spreadMode .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===k));}
+function setWhich(k){bookK=k;const B=BOOKS[k];BT=B.bt;coverM.map=ctex(B.cover);coverM.needsUpdate=true;fitBook();setSpread(B.def);setCover(coverK);
+  const sm=document.getElementById('spreadRow');if(sm)sm.style.display=k==='b13'?'':'none';
+  document.querySelectorAll('#whichBook .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k));}
+fitBook();
+/* chair, facing the cloth (schematic) */
+const chair=new THREE.Group();
+const seat=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.025,0.42),legM);seat.position.y=0.45;chair.add(seat);
+[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{const l=new THREE.Mesh(new THREE.BoxGeometry(0.025,0.44,0.025),legM);l.position.set(sx*0.19,0.22,sz*0.19);chair.add(l);});
+const backR=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.36,0.022),legM);backR.position.set(0,0.68,0.2);chair.add(backR);
+chair.position.set(0,0,TD/2+0.12);set.add(chair);
+const tableEl=add('a-entity',{id:'tableG'});tableEl.setObject3D('mesh',set);
+/* no reading lamp: the only light on the table is the video's (author, 2026-10-30) */
+function placeTable(z){
+  TZ=z;set.position.set(0,0,z);
+  views.read.p[2]=z+TD/2+0.16;views.look.p[2]=z+TD/2+0.16;views.tableSide.p[2]=z+0.9;views.behind.p[2]=z+1.3;
+  const o=document.getElementById('tzOut');if(o)o.textContent=(7.45+z).toFixed(2)+' m';
+}
+function setBook(k){openB.visible=k==='open';closedB.visible=k==='closed';
+  document.querySelectorAll('#bookMode .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.b===k));}
+
+/* v21: two more ways to show the books (trial, 2026-10-31). Only one device stands in the room at a time.
+   shelf  = a shelf fixed to the right wall, a lamp above it, three 13 repo books lying in a stack and one standing,
+            a chair against the wall beside it.
+   plinth = a square plinth on the room's centre line, a pile of 13 repo books, a lamp above it.
+   Sizes, heights and positions are suggestions, not decided. */
+const B13C=ctex(BOOKS.b13.cover), B13T=BOOKS.b13.bt;
+function makeBook(){                                      /* lying flat, cover up, cover top toward -z */
+  const g=new THREE.Group();
+  const blk=new THREE.Mesh(new THREE.BoxGeometry(PW5,B13T,PH5),paperM);blk.position.y=B13T/2;g.add(blk);
+  const cv=new THREE.Mesh(new THREE.PlaneGeometry(PW5,PH5),new THREE.MeshStandardMaterial({map:B13C,roughness:0.9}));
+  cv.rotation.x=-Math.PI/2;cv.position.y=B13T+0.0003;g.add(cv);return g;}
+function makeChair(){
+  const c=new THREE.Group();
+  const s=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.025,0.42),legM);s.position.y=0.45;c.add(s);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{const l=new THREE.Mesh(new THREE.BoxGeometry(0.025,0.44,0.025),legM);l.position.set(sx*0.19,0.22,sz*0.19);c.add(l);});
+  const b=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.36,0.022),legM);b.position.set(0,0.68,0.2);c.add(b);return c;}
+const jit=i=>Math.sin(i*12.9898)*0.5;                     /* fixed small offsets so the piles look placed by hand */
+/* shelf on the right wall (x = 2), centre z = SHZ, top at SHY */
+const SHZ=-4.75, SHW=0.60, SHD=0.25, SHT=0.025; let SHY=1.0;
+const shelfG=new THREE.Group();shelfG.visible=false;
+const shelfBoard=new THREE.Mesh(new THREE.BoxGeometry(SHD,SHT,SHW),whiteM);shelfG.add(shelfBoard);
+const shelfBooks=new THREE.Group();shelfG.add(shelfBooks);
+for(let i=0;i<3;i++){const b=makeBook();b.rotation.y=-Math.PI/2+jit(i+1)*0.08;   /* cover top toward the wall */
+  b.position.set(2-SHD/2+jit(i+3)*0.006,i*B13T,SHZ-0.12+jit(i+5)*0.008);shelfBooks.add(b);}
+{const b=makeBook();b.rotation.order='YXZ';b.rotation.set(Math.PI/2,-Math.PI/2,0); /* standing, cover toward the room */
+  b.position.set(2-0.035,PH5/2,SHZ+0.13);b.children.forEach(m=>{m.position.y-=B13T/2;});shelfBooks.add(b);}
+shelfBooks.add(Object.assign(shadow(SHD+0.06,SHW*0.9),{}));
+const shelfChair=makeChair();shelfChair.rotation.y=Math.PI/2;shelfChair.position.set(2-0.24,0,SHZ-0.62);shelfG.add(shelfChair);
+const shelfLampT=add('a-entity',{id:'shelfLampT'});
+const shelfLamp=add('a-entity',{light:'type:spot; color:#ffffff; intensity:0; angle:24; penumbra:0.5; distance:3.2; decay:1.2; target:#shelfLampT'});
+const shelfFix=add('a-cylinder',{radius:0.04,height:0.12,rotation:'0 0 25',material:'color:#141414; roughness:0.6',visible:'false'});
+function placeShelf(y){
+  SHY=y;shelfBoard.position.set(2-SHD/2,y-SHT/2,SHZ);shelfBooks.position.y=y;
+  shelfBooks.children[shelfBooks.children.length-1].position.set(2-SHD/2,0.0008,SHZ);
+  shelfLamp.object3D.position.set(1.55,2.44,SHZ);shelfFix.object3D.position.set(1.55,2.44,SHZ);
+  shelfLampT.object3D.position.set(1.9,y,SHZ);
+  views.shelfSit.pitch=y>1.15?-2:-14;
+  const o=document.getElementById('shelfHOut');if(o)o.textContent=Math.round(y*100)+' cm';
+}
+const shelfEl=add('a-entity',{id:'shelfG'});shelfEl.setObject3D('mesh',shelfG);
+/* square plinth on the centre line */
+const PLZ=-5.0, PLW=0.40, PLH=1.00; let PLN=8;
+const plinthG=new THREE.Group();plinthG.visible=false;
+const plinthM=new THREE.MeshStandardMaterial({color:0x1d1c1b,roughness:0.7});
+const plinth=new THREE.Mesh(new THREE.BoxGeometry(PLW,PLH,PLW),plinthM);plinth.position.set(0,PLH/2,PLZ);plinthG.add(plinth);
+const pile=new THREE.Group();pile.position.set(0,PLH,PLZ);plinthG.add(pile);
+function buildPile(n){
+  PLN=n;pile.clear();
+  for(let i=0;i<n;i++){const b=makeBook();b.rotation.y=jit(i+11)*0.16;b.position.set(jit(i+21)*0.012,i*B13T,jit(i+31)*0.012);pile.add(b);}
+  pile.add(shadow(PW5+0.06,PH5+0.06));pile.children[pile.children.length-1].position.y=0.0008;
+  const o=document.getElementById('plinthNOut');if(o)o.textContent=n;
+}
+buildPile(PLN);
+const plinthEl=add('a-entity',{id:'plinthG'});plinthEl.setObject3D('mesh',plinthG);
+const plinthLampT=add('a-entity',{id:'plinthLampT',position:`0 ${PLH} ${PLZ}`});
+const plinthLamp=add('a-entity',{position:`0.55 2.46 ${PLZ+0.45}`,light:'type:spot; color:#ffffff; intensity:0; angle:16; penumbra:0.5; distance:3.2; decay:1.2; target:#plinthLampT'});
+const plinthFix=add('a-cylinder',{position:`0.55 2.46 ${PLZ+0.45}`,radius:0.04,height:0.12,rotation:'30 0 -25',material:'color:#141414; roughness:0.6',visible:'false'});
+let device='table';
+function setDevice(d){
+  device=d;set.visible=d==='table';shelfG.visible=d==='shelf';plinthG.visible=d==='plinth';
+  shelfLamp.setAttribute('light','intensity',d==='shelf'?1.6:0);shelfFix.setAttribute('visible',d==='shelf');
+  plinthLamp.setAttribute('light','intensity',d==='plinth'?1.6:0);plinthFix.setAttribute('visible',d==='plinth');
+  document.getElementById('tableCtl').style.display=d==='table'?'':'none';
+  document.getElementById('shelfCtl').style.display=d==='shelf'?'':'none';
+  document.getElementById('plinthCtl').style.display=d==='plinth'?'':'none';
+  document.querySelectorAll('#device .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.d===d));
+}
+
+/* glass reflection (schematic): the glass top acts as a flat mirror. For every point we trace the mirrored
+   view ray; where it hits the cloth we take the cloth's picture, elsewhere the room is treated as black.
+   Strength follows Fresnel for plain glass (about 4% per surface head-on, two surfaces, about 8%), rising at
+   grazing angles. Not included: the corridor token light, the crease angle, the booklet's own shadow. */
+const reflU={map:{value:ptex},k:{value:1},base:{value:0}};
+const reflMat=new THREE.ShaderMaterial({
+  uniforms:reflU,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,
+  vertexShader:`varying vec3 vP;varying vec3 vN;
+    void main(){vec4 w=modelMatrix*vec4(position,1.0);vP=w.xyz;vN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*viewMatrix*w;}`,
+  fragmentShader:`uniform sampler2D map;uniform float k;uniform float base;varying vec3 vP;varying vec3 vN;
+    void main(){
+      vec3 V=normalize(vP-cameraPosition);vec3 N=normalize(vN);
+      float c=-dot(V,N);if(c<=0.0)discard;
+      vec3 R=reflect(V,N);vec3 col=vec3(0.0);
+      if(R.z<-1e-4){float t=(-7.45-vP.z)/R.z;vec3 h=vP+R*t;
+        vec2 uv=vec2((h.x+1.8)/3.6,(h.y-0.355)/2.025);
+        if(uv.x>0.0&&uv.x<1.0&&uv.y>0.0&&uv.y<1.0)col=pow(texture2D(map,uv).rgb,vec3(2.2))*0.92;}
+      float F=0.04+0.96*pow(1.0-c,5.0);
+      gl_FragColor=vec4(col*min(1.0,max(base,2.0*F*k)),1.0);
+      #include <colorspace_fragment>
+    }`
+});
+reflMesh=new THREE.Mesh(new THREE.PlaneGeometry(TW,TDcur),reflMat);
+reflMesh.rotation.x=-Math.PI/2;reflMesh.position.y=TH+GT+0.001;reflMesh.renderOrder=3;reflMesh.visible=false;tableG.add(reflMesh);
+let reflMode='off';
+function reflTick(){requestAnimationFrame(reflTick);if(reflMode!=='off')reflU.map.value=mat.map;}
+reflTick();
+/* glass type (trial): clear = two surfaces, about 8% head-on; black = back-painted black glass, only the front
+   surface reflects (about 4%) but nothing shows through; semi = half-mirror coating, about 40% at any angle */
+const GLASS={clear:{k:1,base:0,top:0x1d1c1b,op:0.03},black:{k:0.5,base:0,top:0x040404,op:0.03},semi:{k:1,base:0.4,top:0x1d1c1b,op:0.10}};
+let glassType='clear';
+function setGlass(g){glassType=g;whiteM.color.set(GLASS[g].top);setRefl(reflMode);
+  document.querySelectorAll('#glassMode .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.g===g));}
+function setRefl(r){
+  reflMode=r;reflMesh.visible=r!=='off';const G=GLASS[glassType];reflU.k.value=(r==='boost'?3:1)*G.k;reflU.base.value=r==='off'?0:G.base*(r==='boost'?1.5:1);
+  glassM.opacity=r==='off'?0.14:G.op;
+  document.querySelectorAll('#reflMode .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.r===r));
+}
+/* cover finish (trial, 2026-10-31): the closed book's cover reflects the cloth the same way the glass does.
+   paper = uncoated, no reflection; gloss = gloss lamination, one surface (about 4% head-on, Fresnel) and blurred
+   because a laminated sheet is never quite flat; mirror = mirror silver board, about 60% at any angle, sharp,
+   and the paper colour underneath reads darker. Strengths are schematic. */
+const coverU={map:{value:ptex},k:{value:0.5},base:{value:0},blur:{value:0.03}};
+const coverReflMat=new THREE.ShaderMaterial({
+  uniforms:coverU,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,
+  vertexShader:reflMat.vertexShader,
+  fragmentShader:`uniform sampler2D map;uniform float k;uniform float base;uniform float blur;varying vec3 vP;varying vec3 vN;
+    void main(){
+      vec3 V=normalize(vP-cameraPosition);vec3 N=normalize(vN);
+      float c=-dot(V,N);if(c<=0.0)discard;
+      vec3 R=reflect(V,N);vec3 col=vec3(0.0);
+      if(R.z<-1e-4){float t=(-7.45-vP.z)/R.z;vec3 h=vP+R*t;
+        vec2 uv=vec2((h.x+1.8)/3.6,(h.y-0.355)/2.025);
+        for(int i=-1;i<=1;i++)for(int j=-1;j<=1;j++){vec2 q=uv+vec2(float(i),float(j))*blur;
+          if(q.x>0.0&&q.x<1.0&&q.y>0.0&&q.y<1.0)col+=pow(texture2D(map,q).rgb,vec3(2.2))*0.92/9.0;}}
+      float F=0.04+0.96*pow(1.0-c,5.0);
+      gl_FragColor=vec4(col*min(1.0,max(base,2.0*F*k)),1.0);
+      #include <colorspace_fragment>
+    }`
+});
+const coverRefl=new THREE.Mesh(new THREE.PlaneGeometry(PW5,PH5),coverReflMat);
+coverRefl.rotation.x=-Math.PI/2;coverRefl.renderOrder=5;coverRefl.visible=false;closedB.add(coverRefl);
+/* roughness stays 0.9: the reflection layer already carries the video; a shiny standard material would add a
+   second highlight from the schematic point light that stands in for the video's light */
+const COVER={paper:{refl:false,tint:0xffffff,rough:0.9},
+  gloss:{refl:true,k:0.5,base:0,blur:0.03,tint:0xffffff,rough:0.9},
+  mirror:{refl:true,k:0,base:0.6,blur:0.002,tint:0x6a6a6a,rough:0.9}};
+let coverK='paper';
+/* book position (trial): near = in front of the reader (default); far = on the half toward the cloth, where
+   the seated reader's view of the glass and the cover reflects the video (eye-to-surface angle under ~39 deg) */
+function setBookPos(k){const z=k==='far'?-0.19:BZ;closedB.position.z=z;openB.position.z=z;
+  document.querySelectorAll('#bookPos .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===k));}
+function setCover(k){coverK=k;const C=COVER[k];coverRefl.visible=C.refl;
+  if(C.refl){coverU.k.value=C.k;coverU.base.value=C.base;coverU.blur.value=C.blur;}
+  coverM.color.set(C.tint);coverM.roughness=C.rough;coverRefl.position.y=cCover.position.y+0.0002;
+  document.querySelectorAll('#coverMode .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===k));}
+(function coverTick(){requestAnimationFrame(coverTick);if(coverRefl.visible)coverU.map.value=mat.map;})();
+/* projector beam: from the lens to the four corners of the cloth */
+const beamEl=add('a-entity',{id:'beam',visible:'false'});
+{const L=new THREE.Vector3(0,2.44,-4.1),Z=-7.45,ys=[0.355,2.38],xs=[-1.8,1.8],pts=[];
+ xs.forEach(x=>ys.forEach(y=>{pts.push(L.clone(),new THREE.Vector3(x,y,Z));}));
+ pts.push(new THREE.Vector3(-1.8,0.355,Z),new THREE.Vector3(1.8,0.355,Z),new THREE.Vector3(-1.8,2.38,Z),new THREE.Vector3(1.8,2.38,Z));
+ beamEl.setObject3D('mesh',new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x2490f2,transparent:true,opacity:0.7})));}
+const beamBtn=document.getElementById('beamBtn');
+beamBtn.addEventListener('click',()=>{const on=beamBtn.getAttribute('aria-pressed')!=='true';beamBtn.setAttribute('aria-pressed',on);beamEl.setAttribute('visible',on);});
+
+/* token light: the lamp on the corridor wall throws the exhibition title and the artist's name onto the wall, as tokens */
+const TOKENS=[
+  {size:150,toks:[[2,"#"],[135252,"README"]]},  /* same as the letter cover */
+  {size:46,toks:[[12296,"lj"],[280,"al"],[73,"j"],[3731,"uy"],[39794," tj"],[8345,"avel"],[8126,"engan"]]}
+];
+add('a-cylinder',{position:'1.5 2.42 -1.35',rotation:'0 0 -35',radius:0.045,height:0.16,material:'color:#141414; roughness:0.6'});
+const lc=document.createElement('canvas');lc.width=2048;lc.height=768;
+const lctx=lc.getContext('2d');
+const ltex=new THREE.CanvasTexture(lc);if(THREE.SRGBColorSpace) ltex.colorSpace=THREE.SRGBColorSpace;
+const lmat=new THREE.MeshBasicMaterial({map:ltex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});
+const lightEl=add('a-entity',{position:'1.994 1.42 -1.3',rotation:'0 -90 0'});
+lightEl.setObject3D('mesh',new THREE.Mesh(new THREE.PlaneGeometry(1.4,0.525),lmat));
+/* four versions to choose from: a stacked, b one line (chosen), c small caption near the letters, d IDs only */
+const WALL={
+  a:{label:'上下兩行',sizes:[150,46],y:1.42,inline:false,ids:false},
+  b:{label:'同一行',sizes:[110,46],y:1.42,inline:true,ids:false},
+  c:{label:'小字貼近信',sizes:[78,28],y:0.66,inline:false,ids:false},
+  d:{label:'只有 ID',sizes:[120,44],y:1.42,inline:false,ids:true}
+};
+let wallStyle=(new URLSearchParams(location.search).get('wall')||'b');if(!WALL[wallStyle])wallStyle='b';
+function drawTokens(){
+  const W=lc.width,Hh=lc.height,c=lctx,st=WALL[wallStyle];
+  lightEl.object3D.position.y=st.y;
+  c.fillStyle='#000';c.fillRect(0,0,W,Hh);
+  c.save();c.translate(W/2,Hh/2);c.scale(1,Hh/W);  /* faint oval pool of the lamp, fading out inside the edges */
+  const halo=c.createRadialGradient(0,0,0,0,0,W*0.48);
+  halo.addColorStop(0,'rgba(255,255,255,0.07)');halo.addColorStop(0.6,'rgba(255,255,255,0.03)');halo.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=halo;c.fillRect(-W/2,-W/2,W,W);c.restore();
+  const SERIF='"Noto Serif TC","Songti TC",serif',MONO='"IBM Plex Mono",ui-monospace,monospace';
+  const mainFont=(sz,frag)=>st.ids?`${sz*0.62}px ${MONO}`:frag?`${sz*0.5}px ${MONO}`:`${sz}px ${SERIF}`;
+  const rows=TOKENS.map((r0,i)=>{
+    const r={toks:r0.toks,size:st.sizes[i]};const pad=r.size*0.28;
+    const cells=r.toks.map(([id,t,hex])=>{
+      const frag=t===null&&!st.ids,label=st.ids?String(id):frag?`‹${hex}›`:t.replace(/ /g,'·');
+      c.font=mainFont(r.size,frag);const tw=c.measureText(label).width;
+      c.font=`${r.size*0.34}px ${MONO}`;
+      return {id,label,frag,w:(st.ids?tw:Math.max(tw,c.measureText(String(id)).width))+pad*2};
+    });
+    return {r,cells,w:cells.reduce((a,b)=>a+b.w,0)};
+  });
+  const gap=st.inline?st.sizes[0]*0.6:st.sizes[0]*0.45;
+  const place=[];  /* [x, top] for each row */
+  if(st.inline){
+    const total=rows.reduce((a,b)=>a+b.w,0)+gap*(rows.length-1);const bottom=(Hh+st.sizes[0]*1.7)/2;let x=(W-total)/2;
+    rows.forEach(row=>{place.push([x,bottom-row.r.size*1.7]);x+=row.w+gap;});
+  } else {
+    const total=rows.reduce((a,b)=>a+b.r.size*1.75,0)+gap*(rows.length-1);let y=(Hh-total)/2;
+    rows.forEach(row=>{place.push([(W-row.w)/2,y]);y+=row.r.size*1.75+gap;});
+  }
+  c.shadowColor='rgba(255,255,255,0.55)';c.shadowBlur=6;c.textAlign='center';c.textBaseline='alphabetic';
+  rows.forEach(({r,cells},i)=>{
+    let [x,y]=place[i];const base=y+r.size;
+    cells.forEach(cell=>{
+      c.strokeStyle='rgba(255,255,255,0.35)';c.lineWidth=2;
+      c.beginPath();c.moveTo(x,y+r.size*0.1);c.lineTo(x,y+r.size*(st.ids?1.25:1.7));c.stroke();
+      if(cell.frag){c.fillStyle='rgba(255,255,255,0.16)';c.fillRect(x+6,y+r.size*0.25,cell.w-12,r.size*0.85);c.fillStyle='rgba(255,255,255,0.9)';}
+      else c.fillStyle=st.ids?'rgba(255,255,255,0.92)':'#fff';
+      c.font=mainFont(r.size,cell.frag);
+      c.fillText(cell.label,x+cell.w/2,cell.frag?base-r.size*0.22:base);
+      if(!st.ids){c.fillStyle='rgba(255,255,255,0.55)';c.font=`${r.size*0.34}px ${MONO}`;c.fillText(String(cell.id),x+cell.w/2,y+r.size*1.6);}
+      x+=cell.w;
+    });
+  });
+  c.shadowBlur=0;ltex.needsUpdate=true;
+  document.querySelectorAll('#wallText .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===wallStyle));
+}
+function setWallText(k){wallStyle=k;drawTokens();}
+document.getElementById('wallText').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b)setWallText(b.dataset.t);});
+drawTokens();
+document.fonts&&document.fonts.load('150px "Noto Serif TC"','#README').then(drawTokens).catch(()=>{});
+document.fonts&&document.fonts.ready.then(drawTokens);
+
+/* walking path, dashed on the floor */
+const pathRoot=add('a-entity',{id:'path'});
+const pts=[[0.9,1.1],[0.9,-2.6],[0.5,-4.2],[0.0,-4.55],[0.75,-4.5],[1.15,-3.6],[1.15,-1.4],[0.95,-0.15]];
+for(let i=0;i<pts.length-1;i++){
+  const [x1,z1]=pts[i],[x2,z2]=pts[i+1];const dx=x2-x1,dz=z2-z1,L=Math.hypot(dx,dz);
+  const ang=Math.atan2(dx,dz)*180/Math.PI;
+  for(let s=0.12;s<L-0.06;s+=0.26){
+    const t=s/L;
+    add('a-box',{position:`${x1+dx*t} 0.004 ${z1+dz*t}`,width:0.035,height:0.004,depth:0.13,rotation:`0 ${ang} 0`,
+      material:'shader:flat; color:#2490f2; opacity:0.8; transparent:true'},pathRoot);
+  }
+}
+
+/* controls */
+const cam=document.getElementById('cam');
+const views={
+  door:{p:[0.9,1.6,0.8],yaw:0,pitch:0},
+  read:{p:[0,1.18,-4.84],yaw:0,pitch:-52},
+  look:{p:[0,1.18,-4.84],yaw:0,pitch:6},
+  tableSide:{p:[1.25,1.45,-4.4],yaw:52,pitch:-24},
+  behind:{p:[0,1.55,-4.0],yaw:0,pitch:-30},
+  screen:{p:[0,1.5,-3.3],yaw:0,pitch:0},
+  side:{p:[1.6,1.5,-5.6],yaw:40,pitch:-2},
+  back:{p:[0.4,1.6,-7.2],yaw:180,pitch:-8},
+  shelfSide:{p:[0.35,1.55,-3.7],yaw:-58,pitch:-14},
+  shelfSit:{p:[1.74,1.18,-5.37],yaw:-168,pitch:-14},
+  shelfSitOut:{p:[1.74,1.18,-5.37],yaw:38,pitch:4},
+  plinthSide:{p:[1.15,1.6,-3.75],yaw:42,pitch:-20},
+  plinthNear:{p:[0,1.6,-4.45],yaw:0,pitch:-58},
+  top:{p:[0,9.2,-3.85],yaw:0,pitch:-90}
+};
+const ceil=()=>document.getElementById('ceil');
+function goto(v){
+  const d=views[v],lc=cam.components['look-controls'];
+  cam.object3D.position.set(...d.p);
+  if(lc){lc.yawObject.rotation.y=d.yaw*Math.PI/180;lc.pitchObject.rotation.x=d.pitch*Math.PI/180;}
+  ceil()&&ceil().setAttribute('visible',v!=='top');
+  document.querySelectorAll('#views .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));
+}
+document.getElementById('views').addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b)goto(b.dataset.v);});
+function setWalls(m){
+  const black=m==='black';
+  document.querySelectorAll('.wall').forEach(w=>w.setAttribute('material','color',black?'#0e0e0e':'#e6e4de'));
+  document.querySelectorAll('.wood').forEach(w=>w.setAttribute('material','color',black?'#0e0e0e':'#6e5238'));
+  document.querySelectorAll('.doorcover').forEach(w=>w.setAttribute('material','color',black?'#161616':'#3d2f22'));
+  const c=ceil();c&&c.setAttribute('material','color',black?'#101010':'#d9d7d0');
+  document.querySelectorAll('#walls .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.w===m));
+}
+document.getElementById('walls').addEventListener('click',e=>{const b=e.target.closest('[data-w]');if(b)setWalls(b.dataset.w);});
+const pathBtn=document.getElementById('pathBtn');
+pathBtn.addEventListener('click',()=>{const on=pathBtn.getAttribute('aria-pressed')!=='true';pathBtn.setAttribute('aria-pressed',on);document.getElementById('path').setAttribute('visible',on);});
+const fold=document.getElementById('fold'),sheet=document.getElementById('sheet');
+fold.addEventListener('click',()=>{const c=sheet.classList.toggle('collapsed');fold.textContent=c?'展開':'收合';fold.setAttribute('aria-expanded',!c);});
+const sc=document.querySelector('a-scene');
+const vid=document.getElementById('tokvid');const kick=()=>{vid&&vid.play().catch(()=>{});};document.addEventListener('pointerdown',kick,{once:true});
+document.getElementById('wallMode').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(b)setMode(b.dataset.m);});
+const angIn=document.getElementById('foldAng'),angOut=document.getElementById('foldOut');
+angIn.addEventListener('input',()=>{ang=+angIn.value;angOut.textContent=ang+'°';if(mode!=='flat'&&mesh)buildSheet();});
+const swayBtn=document.getElementById('swayBtn');
+swayBtn.addEventListener('click',()=>{sway=!sway;swayBtn.setAttribute('aria-pressed',sway);if(mesh&&mode==='cloth')setZ(mesh.geometry);});
+window.__model={setDevice,placeShelf,buildPile,drawSheet,goto,setMode,drawTokens,setWallText,setRefl,placeTable,setBook,setGlass,setWhich,setSpread,setCover,setBookPos};
+document.getElementById('bookPos').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(b)setBookPos(b.dataset.p);});
+document.getElementById('coverMode').addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(b)setCover(b.dataset.c);});
+document.getElementById('whichBook').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(b)setWhich(b.dataset.k);});
+document.getElementById('spreadMode').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(b)setSpread(b.dataset.s);});
+document.getElementById('glassMode').addEventListener('click',e=>{const b=e.target.closest('[data-g]');if(b)setGlass(b.dataset.g);});
+document.getElementById('reflMode').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(b)setRefl(b.dataset.r);});
+document.getElementById('bookMode').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(b)setBook(b.dataset.b);});
+document.getElementById('device').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(b)setDevice(b.dataset.d);});
+const shIn=document.getElementById('shelfH');shIn.addEventListener('input',()=>placeShelf(+shIn.value));
+const pnIn=document.getElementById('plinthN');pnIn.addEventListener('input',()=>buildPile(+pnIn.value));
+const tzIn=document.getElementById('tz');tzIn.addEventListener('input',()=>{placeTable(+tzIn.value);}); /* hook for tools/render_walkthrough.py */
+const start=()=>{setMode('cloth');placeTable(TZ);placeShelf(SHY);setDevice(new URLSearchParams(location.search).get('device')||'table');setRefl('real');goto('door');kick();};
+if(sc.hasLoaded) start(); else sc.addEventListener('loaded',start);
+})();
+</script>
+</body>
+</html>
