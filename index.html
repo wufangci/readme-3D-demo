@@ -41,6 +41,8 @@ ul.legend li{display:grid;grid-template-columns:12px 1fr;gap:8px;align-items:sta
 .slider input{width:100%;accent-color:var(--accent)}
 .slider output{font-family:var(--mono);color:var(--fg);text-align:right;font-variant-numeric:tabular-nums}
 .collapsed .body{display:none}
+.sheet{max-height:calc(100dvh - 32px);overflow-y:auto}
+@media (max-width:600px){.sheet{width:calc(100% - 104px)}}
 </style>
 </head>
 <body>
@@ -71,32 +73,30 @@ AFRAME.registerComponent('live-canvas',{
 
 <aside class="sheet" id="sheet" aria-label="配置控制">
   <div class="head">
-    <h1>README<span>毛刺 2F · v21</span></h1>
+    <h1>README<span>毛刺 Glitch 2F</span></h1>
     <button class="toggle" id="fold" aria-expanded="true">收合</button>
   </div>
   <div class="body">
-    <div class="dims">寬 400 × 深 770 × 高 250 cm</div>
+    <div>
+      <div class="label">Repository 印本的展示方式（三選一）</div>
+      <div class="row" id="device">
+        <button class="chip" data-d="table" aria-pressed="true">玻璃桌面</button>
+        <button class="chip" data-d="shelf" aria-pressed="false">牆上層板</button>
+        <button class="chip" data-d="plinth" aria-pressed="false">中央方柱</button>
+      </div>
+    </div>
     <div>
       <div class="label">站位</div>
       <div class="row" id="views">
         <button class="chip" data-v="door" aria-pressed="true">入口</button>
-        <button class="chip" data-v="read" aria-pressed="false">坐著讀</button>
-        <button class="chip" data-v="look" aria-pressed="false">坐著抬頭</button>
-        <button class="chip" data-v="tableSide" aria-pressed="false">斜看桌子</button>
-        <button class="chip" data-v="behind" aria-pressed="false">椅子後方站著</button>
+        <button class="chip" data-v="sit" aria-pressed="false">坐下閱讀</button>
         <button class="chip" data-v="screen" aria-pressed="false">投影牆前</button>
-        <button class="chip" data-v="side" aria-pressed="false">斜看牆面</button>
-        <button class="chip" data-v="back" aria-pressed="false">回望入口</button>
-        <button class="chip" data-v="shelfSide" aria-pressed="false">斜看層板</button>
-        <button class="chip" data-v="shelfSit" aria-pressed="false">層板旁坐著</button>
-        <button class="chip" data-v="shelfSitOut" aria-pressed="false">層板旁坐著看布幕</button>
-        <button class="chip" data-v="plinthSide" aria-pressed="false">斜看方柱</button>
-        <button class="chip" data-v="plinthNear" aria-pressed="false">方柱前低頭</button>
         <button class="chip" data-v="top" aria-pressed="false">俯視</button>
       </div>
     </div>
+    <p class="hint">拖曳畫面看四周；電腦可用 WASD 或方向鍵走動。布幕上是錄像開頭與第一章（無聲預覽）。尺寸、燈光、材質皆為示意。</p>
+    <div hidden>
     <div>
-      <div class="label">投影牆</div>
       <div class="row" id="wallMode">
         <button class="chip" data-m="cloth" aria-pressed="true">布幕三折</button>
       </div>
@@ -104,12 +104,6 @@ AFRAME.registerComponent('live-canvas',{
       <div class="row" style="margin-top:8px"><button class="chip" id="swayBtn" aria-pressed="false">布幕微晃</button></div>
     </div>
     <div>
-      <div class="label">信的裝置（三選一，v21）</div>
-      <div class="row" id="device">
-        <button class="chip" data-d="table" aria-pressed="true">桌上閱讀</button>
-        <button class="chip" data-d="shelf" aria-pressed="false">牆上層板</button>
-        <button class="chip" data-d="plinth" aria-pressed="false">中央方柱</button>
-      </div>
       <div id="shelfCtl" style="display:none">
         <label class="slider" for="shelfH"><span>層板高度</span><input type="range" id="shelfH" min="0.8" max="1.4" step="0.05" value="1.0"><output id="shelfHOut">100 cm</output></label>
       </div>
@@ -190,7 +184,7 @@ AFRAME.registerComponent('live-canvas',{
       <li><span class="sw" style="background:#ffffff"></span><span>入口通道右牆的燈打出 #README 與 ljaljuy tjavelengan 的 token（o200k_base）</span></li>
       <li><span class="sw" style="background:#3a3a38"></span><span>樓梯間（示意，開放與否待確認）</span></li>
     </ul>
-    <p class="hint">拖曳畫面看四周；電腦可用 WASD 或方向鍵走動。模型裡的投影是錄像開頭＋第一章粗剪（4:12），影片鋪滿布幕。</p>
+    </div>
   </div>
 </aside>
 </div>
@@ -474,6 +468,7 @@ function setDevice(d){
   document.getElementById('shelfCtl').style.display=d==='shelf'?'':'none';
   document.getElementById('plinthCtl').style.display=d==='plinth'?'':'none';
   document.querySelectorAll('#device .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.d===d));
+  const pth=document.getElementById('path');if(pth)pth.setAttribute('visible',d==='table');
 }
 
 /* glass reflection (schematic): the glass top acts as a flat mirror. For every point we trace the mirrored
@@ -673,7 +668,9 @@ function goto(v){
   ceil()&&ceil().setAttribute('visible',v!=='top');
   document.querySelectorAll('#views .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));
 }
-document.getElementById('views').addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b)goto(b.dataset.v);});
+const SIT={table:'read',shelf:'shelfSit',plinth:'plinthNear'},SIDE={table:'tableSide',shelf:'shelfSide',plinth:'plinthSide'};
+function pick(v){goto(v==='sit'?SIT[device]:v);document.querySelectorAll('#views .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));}
+document.getElementById('views').addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b)pick(b.dataset.v);});
 function setWalls(m){
   const black=m==='black';
   document.querySelectorAll('.wall').forEach(w=>w.setAttribute('material','color',black?'#0e0e0e':'#e6e4de'));
@@ -702,11 +699,12 @@ document.getElementById('spreadMode').addEventListener('click',e=>{const b=e.tar
 document.getElementById('glassMode').addEventListener('click',e=>{const b=e.target.closest('[data-g]');if(b)setGlass(b.dataset.g);});
 document.getElementById('reflMode').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(b)setRefl(b.dataset.r);});
 document.getElementById('bookMode').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(b)setBook(b.dataset.b);});
-document.getElementById('device').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(b)setDevice(b.dataset.d);});
+document.getElementById('device').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(b){setDevice(b.dataset.d);goto(SIDE[device]);document.querySelectorAll('#views .chip').forEach(c=>c.setAttribute('aria-pressed','false'));}});
 const shIn=document.getElementById('shelfH');shIn.addEventListener('input',()=>placeShelf(+shIn.value));
 const pnIn=document.getElementById('plinthN');pnIn.addEventListener('input',()=>buildPile(+pnIn.value));
 const tzIn=document.getElementById('tz');tzIn.addEventListener('input',()=>{placeTable(+tzIn.value);}); /* hook for tools/render_walkthrough.py */
-const start=()=>{setMode('cloth');placeTable(TZ);placeShelf(SHY);setDevice(new URLSearchParams(location.search).get('device')||'table');setRefl('real');goto('door');kick();};
+const start=()=>{setMode('cloth');placeTable(TZ);placeShelf(SHY);setDevice(new URLSearchParams(location.search).get('device')||'table');setRefl('real');setWhich('b13');setSpread('letter');setBook('open');goto('door');kick();
+  if(innerWidth<600){sheet.classList.add('collapsed');fold.textContent='展開';fold.setAttribute('aria-expanded','false');}};
 if(sc.hasLoaded) start(); else sc.addEventListener('loaded',start);
 })();
 </script>
