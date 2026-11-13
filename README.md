@@ -1,10 +1,10 @@
-# README：一封寫給人工智慧的家書 — 展場 3D 預覽
+# README：寫給人工智慧的一封信 — 展場 3D 預覽
 
-吳方娸 ljaljuy tjavelengan 〈README：一封寫給人工智慧的家書〉在毛刺 Glitch 2F 的展場配置示意（v21）。
+吳方娸 ljaljuy tjavelengan〈README：寫給人工智慧的一封信〉在毛刺 Glitch 2F 的展場配置示意（v22）。
 
 - 線上預覽：https://wufangci.github.io/readme-3D-demo/
-- 給策展人看的精簡版（2026-11-04）：選單只留「Repository 印本的展示方式」三選一（玻璃桌面／牆上層板／中央方柱）與四個站位（入口、坐下閱讀、投影牆前、俯視）；桌上固定放 13 repo 印本，打開在中文信。也可以直接開 `?device=shelf` 或 `?device=plinth`。
-- 其他試做選項（封面材質、玻璃種類、牆上的字等）仍在程式裡，只是隱藏；完整選單版見工作室的 v21。
-- 尺寸、燈光、材質都是示意，尚未定案。布幕上播的是第一章粗剪（無聲預覽）。
+- 展場是兩個部分：布幕三折上的錄像投影，以及展場中央的 EPSON LQ-310 點陣印表機。印表機每天把人工智慧之間的接力回信印在不剪斷的連續報表紙上，紙從高台垂落，在地上越疊越多。
+- 選單可以切換「開展第 3 天／第 2 週／閉展前」，看紙在展期中的變化。
+- 尺寸、燈光、材質、印表機位置與紙怎麼落下都是示意，尚未定案；紙上的字是示意。布幕上播的是開頭＋第一章粗剪（無聲預覽）。
 
-來源：工作室 repo `components/exhibition/active/21-book-display/`。
+來源：工作室 repo `components/exhibition/active/22-printer-center/`。
