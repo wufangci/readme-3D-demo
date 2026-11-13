@@ -66,7 +66,7 @@ AFRAME.registerComponent('live-canvas',{
   </a-assets>
   <a-entity id="root"></a-entity>
   <a-entity light="type:ambient; intensity:0.14; color:#ffffff"></a-entity>
-  <a-entity id="cam" camera="fov:72" look-controls="pointerLockEnabled:false; magicWindowTrackingEnabled:false" wasd-controls="acceleration:18" position="-1.52 0.25 -0.75"></a-entity>
+  <a-entity id="cam" camera="fov:72" look-controls="pointerLockEnabled:false; magicWindowTrackingEnabled:false" wasd-controls="acceleration:18" position="-1.52 0.16 -0.75"></a-entity>
 </a-scene>
 
 <aside class="sheet" id="sheet" aria-label="配置控制">
@@ -327,7 +327,7 @@ for(let i=0;i<pts.length-1;i++){
 /* controls */
 const cam=document.getElementById('cam');
 const views={
-  door:{p:[-1.52,0.25,-0.75],yaw:-6,pitch:10},
+  door:{p:[-1.52,0.16,-0.75],yaw:-6,pitch:10},
   arrive:{p:[-1.5,1.6,-3.55],yaw:-20,pitch:-6},
   paper:{p:[-0.75,1.5,-3.05],yaw:-38,pitch:-24},
   printer:{p:[-0.45,1.5,-5.55],yaw:-158,pitch:-22},
@@ -337,9 +337,25 @@ const views={
   top:{p:[0,9.2,-3.85],yaw:0,pitch:-90}
 };
 const ceil=()=>document.getElementById('ceil');
+/* eye height follows the floor while walking (WASD): 160 cm above the room floor or the stair tread underfoot */
+const EYE=1.6;
+function floorAt(x,z){
+  if(x>=-2&&x<-1.05&&z>-3.4&&z<=0) return -0.18*(Math.min(9,Math.floor((z+3.4)/0.34))+1);
+  if(x>=-1.05&&x<-0.10&&z>-1.4&&z<=0) return -0.18*(Math.min(4,Math.floor((z+1.4)/0.28))+1);
+  return 0;
+}
+let walking=false,curView='door',lastXZ=null;
+(function eyeTick(){
+  const p=cam.object3D.position;
+  if(lastXZ&&curView!=='top'&&(Math.abs(p.x-lastXZ[0])>1e-4||Math.abs(p.z-lastXZ[1])>1e-4)) walking=true;
+  if(walking){const t=floorAt(p.x,p.z)+EYE;p.y+=(t-p.y)*0.3;}
+  lastXZ=[p.x,p.z];
+  requestAnimationFrame(eyeTick);
+})();
 function goto(v){
   const d=views[v],lc=cam.components['look-controls'];
-  cam.object3D.position.set(...d.p);
+  walking=false;curView=v;
+  cam.object3D.position.set(...d.p);lastXZ=[d.p[0],d.p[2]];
   if(lc){lc.yawObject.rotation.y=d.yaw*Math.PI/180;lc.pitchObject.rotation.x=d.pitch*Math.PI/180;}
   ceil()&&ceil().setAttribute('visible',v!=='top');
   document.querySelectorAll('#views .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));
