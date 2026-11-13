@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>README 毛刺 2F 配置（v22 印表機在中央）</title>
+<title>README 毛刺 2F 配置（v23 投影在牆上）</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: full-bleed 3D room, one compact control sheet floating bottom-left. Single dark look by choice. */
 :root{
   --bg:#0b0b0a; --panel:rgba(16,16,15,.88); --fg:#ecebe7; --muted:#9a988f;
-  --line:rgba(236,235,231,.14); --accent:#e0b77a; --on:#1a1712;
+  --line:rgba(236,235,231,.14); --accent:#4a4a47; --on:#f2f1ed;
   --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
   color-scheme:dark;
@@ -60,7 +60,7 @@ AFRAME.registerComponent('live-canvas',{
 </script>
 
 <div id="stage">
-<a-scene embedded renderer="colorManagement:true; antialias:true" background="color:#050505" vr-mode-ui="enabled:true" loading-screen="dotsColor:#e0b77a; backgroundColor:#0b0b0a">
+<a-scene embedded renderer="colorManagement:true; antialias:true" background="color:#050505" vr-mode-ui="enabled:true" loading-screen="dotsColor:#8a8a86; backgroundColor:#0b0b0a">
   <a-assets>
     <video id="tokvid" src="README_ch1_roughcut_4m12s_preview720.mp4" loop muted playsinline autoplay preload="auto"></video>
   </a-assets>
@@ -90,18 +90,6 @@ AFRAME.registerComponent('live-canvas',{
       </div>
     </div>
     <div>
-      <div class="label">投影牆</div>
-      <div class="row" id="wallMode">
-        <button class="chip" data-m="cloth" aria-pressed="true">布幕三折</button>
-        <button class="chip" data-m="env" aria-pressed="false">A4 對角摺</button>
-        <button class="chip" data-m="tri" aria-pressed="false">A4 三折</button>
-        <button class="chip" data-m="vtri" aria-pressed="false">直式三折</button>
-        <button class="chip" data-m="flat" aria-pressed="false">原木牆 16:9</button>
-      </div>
-      <label class="slider" for="foldAng"><span>摺痕角度</span><input type="range" id="foldAng" min="0" max="12" step="1" value="4"><output id="foldOut">4°</output></label>
-      <div class="row" style="margin-top:8px"><button class="chip" id="swayBtn" aria-pressed="false">布幕微晃</button></div>
-    </div>
-    <div>
       <div class="label">牆面</div>
       <div class="row" id="walls">
         <button class="chip" data-w="black" aria-pressed="true">全黑（木牆遮黑幕）</button>
@@ -117,17 +105,6 @@ AFRAME.registerComponent('live-canvas',{
       </div>
       <div class="dims" id="paperInfo" style="margin-top:8px"></div>
     </div>
-    <div class="row">
-      <button class="chip" id="pathBtn" aria-pressed="true">顯示動線</button>
-    </div>
-    <ul class="legend">
-      <li><span class="sw" style="background:#f4f3ef"></span><span>單頻道投影，聲音外放</span></li>
-      <li><span class="sw" style="background:#d9d8d4"></span><span>布幕 360 × 203 cm（16:9），摺三折後燙出兩條直摺線，三幅布在摺線處接縫；上方吊桿懸掛，下方細桿拉平</span></li>
-      <li><span class="sw" style="background:#d6d3cb"></span><span>EPSON LQ-310 點陣印表機，展場中央的高台上（100 cm），面向布幕；頂光</span></li>
-      <li><span class="sw" style="background:#f7f6f2"></span><span>接力回信印在不剪斷的連續報表紙（9.5 吋）上，從高台背面垂落，在地上沿摺線疊起</span></li>
-      <li><span class="sw" style="background:#3a3a38"></span><span>入口：觀眾從左側樓梯走上來，面向布幕（階梯示意）；底部 87 cm 的門關著</span></li>
-    </ul>
-    <p class="hint">拖曳畫面看四周；電腦可用 WASD 或方向鍵走動。模型裡的投影是錄像開頭＋第一章粗剪（4:12）。印表機的高度、紙怎麼落下、紙上的字都是示意，等印表機實測。其他摺法（A4 假牆）保留作對照。</p>
   </div>
 </aside>
 </div>
@@ -234,7 +211,7 @@ add('a-cylinder',{position:'0 0.352 -7.45',rotation:'0 0 90',radius:0.007,height
 [-1.6,1.6].forEach(x=>add('a-cylinder',{position:`${x} 2.45 -7.45`,radius:0.002,height:0.1,material:ROD},rig));
 function setMode(m){
   mode=m;const flat=m==='flat';
-  plain.setAttribute('visible',flat);sheetEl.setAttribute('visible',!flat);frameEl.setAttribute('visible',!flat&&m!=='cloth');rig.setAttribute('visible',m==='cloth');document.getElementById('swayBtn').disabled=m!=='cloth';
+  plain.setAttribute('visible',flat);sheetEl.setAttribute('visible',!flat);frameEl.setAttribute('visible',!flat&&m!=='cloth');rig.setAttribute('visible',m==='cloth');
   projL.setAttribute('light','intensity',flat?0:0.35);
   if(!flat){
     const cl=m==='cloth';
@@ -246,8 +223,6 @@ function setMode(m){
     if(pc.width!==nW||pc.height!==nH){pc.width=nW;pc.height=nH;ptex.dispose();ptex=mkTex();mat.map=ptex;mat.emissiveMap=ptex;mat.needsUpdate=true;}
     buildSheet();drawSheet();
   }
-  document.getElementById('foldAng').disabled=flat;
-  document.querySelectorAll('#wallMode .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===m));
 }
 
 /* printer at the centre of the room: tall stand, LQ-310 facing the screen, printed fanfold paper
@@ -311,19 +286,6 @@ function setPaper(days){
 add('a-entity',{id:'prT',position:`${PX} 0.8 ${PZ+0.1}`});
 add('a-entity',{position:`${PX+0.25} 2.45 ${PZ+0.55}`,light:'type:spot; color:#ffffff; intensity:1.5; angle:30; penumbra:0.7; distance:3.6; decay:1.4; target:#prT'});
 
-/* walking path, dashed on the floor */
-const pathRoot=add('a-entity',{id:'path'});
-const pts=[[-1.52,-3.5],[-0.65,-3.6],[-0.75,-4.3],[-0.45,-5.5],[0.8,-5.4],[1.15,-3.2],[0.3,-2.95],[-1.1,-3.3]];
-for(let i=0;i<pts.length-1;i++){
-  const [x1,z1]=pts[i],[x2,z2]=pts[i+1];const dx=x2-x1,dz=z2-z1,L=Math.hypot(dx,dz);
-  const ang=Math.atan2(dx,dz)*180/Math.PI;
-  for(let s=0.12;s<L-0.06;s+=0.26){
-    const t=s/L;
-    add('a-box',{position:`${x1+dx*t} 0.004 ${z1+dz*t}`,width:0.035,height:0.004,depth:0.13,rotation:`0 ${ang} 0`,
-      material:'shader:flat; color:#e0b77a; opacity:0.75; transparent:true'},pathRoot);
-  }
-}
-
 /* controls */
 const cam=document.getElementById('cam');
 const views={
@@ -371,19 +333,12 @@ function setWalls(m){
 }
 document.getElementById('walls').addEventListener('click',e=>{const b=e.target.closest('[data-w]');if(b)setWalls(b.dataset.w);});
 document.getElementById('paperMode').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(b)setPaper(+b.dataset.d);});
-const pathBtn=document.getElementById('pathBtn');
-pathBtn.addEventListener('click',()=>{const on=pathBtn.getAttribute('aria-pressed')!=='true';pathBtn.setAttribute('aria-pressed',on);document.getElementById('path').setAttribute('visible',on);});
 const fold=document.getElementById('fold'),sheet=document.getElementById('sheet');
 fold.addEventListener('click',()=>{const c=sheet.classList.toggle('collapsed');fold.textContent=c?'展開':'收合';fold.setAttribute('aria-expanded',!c);});
 const sc=document.querySelector('a-scene');
 const vid=document.getElementById('tokvid');const kick=()=>{vid&&vid.play().catch(()=>{});};document.addEventListener('pointerdown',kick,{once:true});
-document.getElementById('wallMode').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(b)setMode(b.dataset.m);});
-const angIn=document.getElementById('foldAng'),angOut=document.getElementById('foldOut');
-angIn.addEventListener('input',()=>{ang=+angIn.value;angOut.textContent=ang+'°';if(mode!=='flat'&&mesh)buildSheet();});
-const swayBtn=document.getElementById('swayBtn');
-swayBtn.addEventListener('click',()=>{sway=!sway;swayBtn.setAttribute('aria-pressed',sway);if(mesh&&mode==='cloth')setZ(mesh.geometry);});
 window.__model={drawSheet,goto,setMode,setPaper}; /* hook for tools/render_walkthrough.py */
-const start=()=>{setMode('cloth');setPaper(14);goto('door');kick();};
+const start=()=>{setMode('flat');setPaper(14);goto('door');kick();};
 if(sc.hasLoaded) start(); else sc.addEventListener('loaded',start);
 })();
 </script>
